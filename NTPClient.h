@@ -14,18 +14,23 @@ class NTPClient {
     bool          _udpSetup       = false;
 
     const char*   _poolServerName = "pool.ntp.org"; // Default time server
-    IPAddress     _poolServerIP;
-    unsigned int  _port           = NTP_DEFAULT_LOCAL_PORT;
+    int           _port           = NTP_DEFAULT_LOCAL_PORT;
     long          _timeOffset     = 0;
 
-    unsigned long _updateInterval = 60000;  // In ms
+    unsigned long _updateInterval = 3600;  // In s
 
-    unsigned long _currentEpoc    = 0;      // In s
-    unsigned long _lastUpdate     = 0;      // In ms
+    unsigned long _currentEpoc    = 0;     // In s
+    unsigned long _bootEpoc       = 0;     // In s
+    unsigned long _lastUpdate     = 0;     // In s
+    unsigned long _lastMillis     = 0;
+    unsigned long _currentSeconds = 0;
 
     byte          _packetBuffer[NTP_PACKET_SIZE];
 
     void          sendNTPPacket();
+    unsigned long getDeltaMillis();
+    void          updateMillis();
+    void          updateSecond();
 
   public:
     NTPClient(UDP& udp);
@@ -33,9 +38,6 @@ class NTPClient {
     NTPClient(UDP& udp, const char* poolServerName);
     NTPClient(UDP& udp, const char* poolServerName, long timeOffset);
     NTPClient(UDP& udp, const char* poolServerName, long timeOffset, unsigned long updateInterval);
-    NTPClient(UDP& udp, IPAddress poolServerIP);
-    NTPClient(UDP& udp, IPAddress poolServerIP, long timeOffset);
-    NTPClient(UDP& udp, IPAddress poolServerIP, long timeOffset, unsigned long updateInterval);
 
     /**
      * Set time server name
@@ -43,11 +45,6 @@ class NTPClient {
      * @param poolServerName
      */
     void setPoolServerName(const char* poolServerName);
-
-     /**
-     * Set random local port
-     */
-    void setRandomPort(unsigned int minValue = 49152, unsigned int maxValue = 65535);
 
     /**
      * Starts the underlying UDP client with the default local port
@@ -57,7 +54,7 @@ class NTPClient {
     /**
      * Starts the underlying UDP client with the specified local port
      */
-    void begin(unsigned int port);
+    void begin(int port);
 
     /**
      * This should be called in the main loop of your application. By default an update from the NTP Server is only
@@ -73,6 +70,11 @@ class NTPClient {
      * @return true on success, false on failure
      */
     bool forceUpdate();
+
+    /**
+     * @return seconds since boottime
+     * */
+    unsigned long getSecondSinceBoot() const;
 
     int getDay() const;
     int getHours() const;
